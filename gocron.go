@@ -64,6 +64,8 @@ type Job struct {
 
 	// Map for function and  params of function
 	fparams map[string]([]interface{})
+
+	afterRun func(*Job)
 }
 
 // Create a new job with the time interval.
@@ -76,6 +78,7 @@ func NewJob(intervel uint64) *Job {
 		time.Sunday,
 		make(map[string]interface{}),
 		make(map[string]([]interface{})),
+		nil,
 	}
 }
 
@@ -99,7 +102,16 @@ func (j *Job) run() (result []reflect.Value, err error) {
 	result = f.Call(in)
 	j.lastRun = time.Now()
 	j.scheduleNextRun()
+
+	if j.afterRun != nil {
+		j.afterRun(j)
+	}
 	return
+}
+
+func (j *Job) AfterRun(afterRun func(*Job)) *Job {
+	j.afterRun = afterRun
+	return j
 }
 
 // for given function fn , get the name of funciton.
